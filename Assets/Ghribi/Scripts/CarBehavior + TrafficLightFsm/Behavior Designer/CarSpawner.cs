@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>Spawns cars at random lane spawn points. Cars destroy themselves at the end of the road.</summary>
 public class CarSpawner : MonoBehaviour
 {
     [SerializeField] private IntersectionManager intersection;
@@ -9,9 +8,11 @@ public class CarSpawner : MonoBehaviour
     [SerializeField] private LaneSpawnPoint[] spawnPoints;
 
     [Header("Spawning")]
-    [SerializeField] private Vector2 spawnInterval = new Vector2(2f, 5f); // min / max seconds
-    [SerializeField] private float spawnClearRadius = 4f;                 // skip if a car is still here
+    [SerializeField] private Vector2 spawnInterval = new Vector2(2f, 5f);
+    [SerializeField] private float spawnClearRadius = 4f;
     [SerializeField] private int maxCars = 20;
+
+    private readonly Collider[] overlapBuffer = new Collider[32];
 
     private IEnumerator Start()
     {
@@ -24,7 +25,7 @@ public class CarSpawner : MonoBehaviour
 
     private void TrySpawn()
     {
-        if (spawnPoints.Length == 0) return;
+        if (spawnPoints == null || spawnPoints.Length == 0 || intersection == null) return;
         if (intersection.CarCount >= maxCars) return;
 
         LaneSpawnPoint point = spawnPoints[Random.Range(0, spawnPoints.Length)];
@@ -36,9 +37,11 @@ public class CarSpawner : MonoBehaviour
 
     private bool IsBlocked(Vector3 position)
     {
-        foreach (Collider c in Physics.OverlapSphere(position, spawnClearRadius))
+        int hits = Physics.OverlapSphereNonAlloc(position, spawnClearRadius, overlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits; i++)
         {
-            if (c.GetComponentInParent<TrafficCar>() != null) return true;
+            if (overlapBuffer[i].GetComponentInParent<TrafficCar>() != null)
+                return true;
         }
         return false;
     }

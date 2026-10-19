@@ -2,18 +2,9 @@ using UnityEngine;
 
 /// <summary>
 /// Finite State Machine for the intersection (Scenario 1).
-///
-/// Phase | North-South | East-West
-///   1   |   Green     |   Red
-///   2   |   Yellow    |   Red
-///   3   |   Red       |   Green
-///   4   |   Red       |   Yellow
-///   5   |   Red       |   Red
-///   then it starts again at phase 1.
 /// </summary>
 public class TrafficLightFSM : MonoBehaviour
 {
-    // The 5 states of the machine.
     private enum State
     {
         NS_Green_EW_Red,     // phase 1
@@ -23,17 +14,21 @@ public class TrafficLightFSM : MonoBehaviour
         AllRed               // phase 5
     }
 
+    private const int StateCount = 5;
+
     [Header("Traffic lights (drag them from the scene)")]
-    [SerializeField] private TrafficLight[] northSouthLights; // the North and South lights
-    [SerializeField] private TrafficLight[] eastWestLights;   // the East and West lights
+    [SerializeField] private TrafficLight[] northSouthLights;
+    [SerializeField] private TrafficLight[] eastWestLights;
 
     [Header("Durations (seconds)")]
-    [SerializeField] private float greenTime  = 5f;
-    [SerializeField] private float yellowTime = 2f;
+    [SerializeField] private float greenTime = 5f;
+    [SerializeField] private float yellowTime = 3f;
     [SerializeField] private float allRedTime = 2f;
 
     private State currentState;
     private float timeLeft;
+    private LightColor northSouthColor = LightColor.Green;
+    private LightColor eastWestColor = LightColor.Red;
 
     private void Start()
     {
@@ -46,18 +41,16 @@ public class TrafficLightFSM : MonoBehaviour
 
         if (timeLeft <= 0f)
         {
-            EnterState(GetNextState(currentState));
+            EnterState((State)(((int)currentState + 1) % StateCount));
         }
     }
 
-    // Transitions: each state leads to the next one, the last one loops back to the first.
-    private State GetNextState(State state)
+    /// <summary>Returns the current light color for the given approach direction.</summary>
+    public LightColor GetLight(Direction approach)
     {
-        int stateCount = System.Enum.GetValues(typeof(State)).Length;
-        return (State)(((int)state + 1) % stateCount);
+        return approach.IsNorthSouth() ? northSouthColor : eastWestColor;
     }
 
-    // Called once each time we switch to a new state.
     private void EnterState(State newState)
     {
         currentState = newState;
@@ -86,9 +79,11 @@ public class TrafficLightFSM : MonoBehaviour
         }
     }
 
-    // Updates the lights in the scene, restarts the timer and prints to the console.
     private void Apply(LightColor northSouth, LightColor eastWest, float duration)
     {
+        northSouthColor = northSouth;
+        eastWestColor = eastWest;
+
         SetAll(northSouthLights, northSouth);
         SetAll(eastWestLights, eastWest);
 
@@ -97,11 +92,13 @@ public class TrafficLightFSM : MonoBehaviour
         Debug.Log($"Phase {(int)currentState + 1}/5  |  North-South: {northSouth}  |  East-West: {eastWest}  ({duration}s)");
     }
 
-    private void SetAll(TrafficLight[] lights, LightColor color)
+    private static void SetAll(TrafficLight[] lights, LightColor color)
     {
-        foreach (TrafficLight light in lights)
+        if (lights == null) return;
+
+        for (int i = 0; i < lights.Length; i++)
         {
-            light.SetColor(color);
+            if (lights[i] != null) lights[i].SetColor(color);
         }
     }
 }

@@ -1,0 +1,60 @@
+================================================================================
+          UNITY 4-WAY INTERSECTION TRAFFIC SIMULATION ARCHITECTURE
+================================================================================
+
+OVERVIEW
+--------
+This project simulates a 4-way urban intersection managed by a Finite State 
+Machine (FSM) controlling traffic lights (Scenario 1), while individual cars 
+autonomously navigate the environment using Behavior Designer behavior trees, 
+Unity NavMesh paths, and centralized intersection arbitration.
+
+--------------------------------------------------------------------------------
+1. CORE COMPONENTS & RESPONSIBILITIES
+--------------------------------------------------------------------------------
+
+A. TrafficLightFSM.cs (The Signal Brain)
+   - Governs the 5-phase traffic light cycle (NS Green -> NS Yellow -> EW Green -> 
+     EW Yellow -> All Red) based on configurable timers.
+   - Updates physical TrafficLight 3D models and logs phase transitions to the console.
+   - Exposes GetLight(Direction approach) for query-based state reading.
+
+B. TrafficLight.cs (Physical Lamps)
+   - Controls the emission and color properties of individual red, yellow, and 
+     green lamps on the 3D traffic light asset.
+
+C. IntersectionManager.cs (The Central Arbitrator)
+   - Acts as the single source of truth for intersection rules and spacing.
+   - Manages the center lock system to coordinate opposing left-turners safely.
+   - Evaluates oncoming traffic conflicts and queue leadership.
+   - Dynamically builds Bezier curve waypoints for turns (Straight, Left, Right).
+
+D. TrafficCar.cs & TrafficTasks.cs (The Vehicle AI & Behavior Tree)
+   - Evaluates whether to stop for red/yellow lights or yield to oncoming traffic.
+   - Implements "Solution 2" (Waiting Pocket): Left-turners pull forward and shift 
+     left on a green light when blocked by oncoming traffic, allowing Straight 
+     and Right cars to bypass them without getting stuck.
+   - Includes a deadlock watchdog timer to automatically un-stick vehicles 
+     inside the intersection.
+
+--------------------------------------------------------------------------------
+2. HOW THE SYSTEMS LINK TOGETHER
+--------------------------------------------------------------------------------
+
+1. Signal Synchronization:
+   - TrafficLightFSM manages the active state of each approach. When a car 
+     approaches the intersection, its Behavior Tree evaluates the conditional 
+     task MustWaitAtStopLine, which queries TrafficCar -> IntersectionManager -> 
+     TrafficLightFSM to check if the current light is Green.
+
+2. Decentralized Decision Making, Centralized Rules:
+   - Individual cars make no global decisions; their Behavior Trees execute 
+     actions like HoldAtStopLine, DriveRoute, and ManageCenterLock. 
+   - Whenever a car needs rule-based verification (e.g., checking oncoming traffic 
+     conflicts or claiming the intersection center), it calls methods on the 
+     shared IntersectionManager instance.
+
+3. Flow Optimization & Bypass Logic:
+   - Straight and Right-bound traffic inspects cars ahead via IsCarAhead(). 
+   - Cars automatically bypass any left-turning car currently waiting inside the 
+     designated Left-Turn Waiting Pocket, keeping overall traffic flowing smoothly.
