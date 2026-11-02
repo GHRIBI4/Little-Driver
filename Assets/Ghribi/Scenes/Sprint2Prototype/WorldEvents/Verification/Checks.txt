@@ -1,0 +1,31 @@
+Live Unity verification, 2026-10-27
+Project: Little-Driver / Sprint2Prototype
+Unity: 6000.3.10f1
+
+Compilation: passed.
+Readability refactor: passed 132 comparisons against the original score
+formulas plus the police/crossing/departure worked examples. Full live event
+checks passed again after moving the formulas into their action scripts.
+Advancing Play mode frames: confirmed using wait_for Time.frameCount changed.
+
+WorldEventPlayChecks: PASS
+- Player maximum 55 km/h; 50 km/h does not trigger speeding.
+- Police front/rear/range and obstacle occlusion checks.
+- Highest utility selection when police, crossing, and departure are eligible.
+- Police siren playback and alternating red/blue light intensities.
+- Police effects stop after the warning.
+- Pedestrian starts walking, completes after braking, and can return.
+- Selected bus moves forward, disappears, and cannot activate again that run.
+- Restart restores bus position/visibility/eligibility and pedestrian sides.
+
+Visual inspection: police warning and adult walking on the marked crossing.
+Captures: Police.png, Crossing.png.
+
+Normal controls drive: police and departure selected with default settings.
+Pedestrian crossing remains probabilistic and requires speeding on approach.
+Existing parked taxi overlaps the starting right lane; driving straight into
+it produces normal collision recovery and can affect speed/event timing.
+
+The existing Unity Animator graph editor also logged Edge.WakeUp exceptions
+before and during this work. Those editor-window errors are separate from the
+new runtime event checks. No compilation failure remains.

@@ -47,6 +47,11 @@ namespace LittleDriver.Prototype
         public bool IsRecovering { get; private set; }
         public float CollisionUntil { get; private set; }
         public float Speed => Mathf.Max(0, body.linearVelocity.z);
+        public float MaximumSpeedKmh
+        {
+            get => maximumSpeed * 3.6f;
+            set => maximumSpeed = Mathf.Max(1, value) / 3.6f;
+        }
         public int Lane => lane;
         public event Action Restarted;
 
